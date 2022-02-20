@@ -5,6 +5,7 @@ import it.unipi.hadoop.Compress.CompressReducer;
 import it.unipi.hadoop.Compress.CompressWritable;
 import it.unipi.hadoop.Parse.ParseMapper;
 import it.unipi.hadoop.Parse.ParseReducer;
+import it.unipi.hadoop.Rank.RankCombiner;
 import it.unipi.hadoop.Rank.RankMapper;
 import it.unipi.hadoop.Rank.RankReducer;
 import it.unipi.hadoop.Rank.RankWritable;
@@ -36,12 +37,13 @@ public class Main {
         job.setMapperClass(RankMapper.class);
         job.setMapOutputKeyClass(LongWritable.class);
         job.setMapOutputValueClass(RankWritable.class);
+        job.setCombinerClass(RankCombiner.class);
 
         FileOutputFormat.setOutputPath(job, new Path(outputPath));
         job.setOutputFormatClass(TextOutputFormat.class);
         job.setReducerClass(RankReducer.class);
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(NullWritable.class);
+        job.setOutputKeyClass(LongWritable.class);
+        job.setOutputValueClass(RankWritable.class);
 
         return job.waitForCompletion(true);
     }
@@ -148,18 +150,27 @@ public class Main {
             return;
         }
 
+        boolean ret = true;
+
         if((MOD & PARSE) != 0)
-            parse(inPath, outDir + "/parse", conf);
-        if((MOD & COMPRESS) != 0)
-            compress((MOD & PARSE) == 0 ? inPath : outDir + "/parse", outDir + "/compress", conf);
-        if((MOD & RANK) != 0) {
+            ret = parse(inPath, outDir + "/parse", conf);
+        if(ret && (MOD & COMPRESS) != 0)
+            ret = compress((MOD & PARSE) == 0 ? inPath : outDir + "/parse", outDir + "/compress", conf);
+        if(ret && (MOD & RANK) != 0) {
             for (int i = 0; i < ITERATIONS; i++) {
                 String inputPath = (i > 0) ? (outDir + "/iter" + i + "/part-r-00000") : ((MOD & COMPRESS) == 0 ? inPath : outDir + "/compress");
                 String outputPath = outDir + "/iter" + (i + 1);
 
-                step(inputPath, outputPath, conf);
+                ret = step(inputPath, outputPath, conf);
+                if(!ret)
+                    break;
             }
         }
+
+        if(!ret)
+            System.out.println("[ERROR] something has gone wrong");
+        else
+            System.out.println("Finished.");
 
         //job.setCombinerClass(ParseReducer.class);
     }

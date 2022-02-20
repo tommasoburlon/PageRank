@@ -8,7 +8,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 import java.io.IOException;
 
 public class CompressReducer extends Reducer<Text, CompressWritable, Text, NullWritable> {
-    private Text response = new Text();
+    private final Text response = new Text();
     private long N;
     @Override
     public void setup(Context ctx){
@@ -27,7 +27,7 @@ public class CompressReducer extends Reducer<Text, CompressWritable, Text, NullW
             }
         }
 
-        response.set(id + " " + (1.0 / N) + " " + size + res);
+        response.set(id + " " + (1.0 / N) + " 0 " + size + res);
         ctx.write(response, NullWritable.get());
     }
 }

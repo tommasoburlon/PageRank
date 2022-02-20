@@ -58,4 +58,15 @@ public class RankWritable implements Writable {
     }
 
     public double getProbability(){ return probability; }
+
+    public String toString(){
+        StringBuilder builder = new StringBuilder();
+
+        if(this.isNode()) {
+            builder.append(node.getRank()).append(" ").append(node.getEpsilon()).append(" ").append(node.getArcsNumber());
+            for(Iterator<Long> itr = node.getNodeIterator(); itr.hasNext();)
+                builder.append(" ").append(itr.next());
+        }
+        return builder.toString();
+    }
 }

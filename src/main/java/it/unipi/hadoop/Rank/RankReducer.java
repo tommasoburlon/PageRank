@@ -7,8 +7,9 @@ import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
 
-public class RankReducer extends Reducer<LongWritable, RankWritable, Text, NullWritable> {
-    private Text result = new Text();
+public class RankReducer extends Reducer<LongWritable, RankWritable, LongWritable, RankWritable> {
+    //private Text result = new Text();
+    private final RankWritable result = new RankWritable();
     private double alpha;
     private long N;
     private boolean isFirst;
@@ -20,7 +21,7 @@ public class RankReducer extends Reducer<LongWritable, RankWritable, Text, NullW
 
     @Override
     public void reduce(LongWritable key, Iterable<RankWritable> list, Context ctx) throws IOException, InterruptedException {
-        double res = 0;
+        double res = 0, rank;
         RankNode n = new RankNode();
         for(RankWritable value : list){
             if(value.isNode()){
@@ -32,7 +33,7 @@ public class RankReducer extends Reducer<LongWritable, RankWritable, Text, NullW
 
         res = res * (1 - alpha) + ((double)1 / N) * alpha;
         n.setRank(res);
-        result.set(n.toString());
-        ctx.write(result, NullWritable.get());
+        result.setNode(n);
+        ctx.write(key, result);
     }
 }
